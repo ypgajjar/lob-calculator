@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Elegant LOB Tool (v9.9 - Final Fixes)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <!-- Chart.js and Adapters -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      background-color: #f3f4f6;
+    }
+    /* Floating Label Styles */
+    .floating-input {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .floating-input input {
+      border: none;
+      border-bottom: 2px solid #d1d5db;
+      width: 100%;
+      padding: 0.75rem 0 0.25rem 0;
+      background: transparent;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .floating-input input:focus {
+      border-color: #2563eb;
+    }
+    .floating-input label {
+      position: absolute;
+      left: 0;
+      top: 0.75rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+    .floating-input input:focus + label,
+    .floating-input input:not(:placeholder-shown) + label {
+      transform: translateY(-1.5rem);
+      font-size: 0.75rem;
+      color: #2563eb;
+    }
+    /* Ensure floating label is fully visible */
+    .floating-input {
+      overflow: visible; 
+      z-index: 10;      /* So label is not clipped */
+    }
+
+    /* Scrollbar styling */
+    .activity-list::-webkit-scrollbar { width: 8px; }
+    .activity-list::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 10px; }
+    .activity-list::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
+    .activity-list::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+    /* Chart tooltip */
+    .chartjs-tooltip {
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 0.875rem;
+      pointer-events: none;
+    }
+
+    /* Buttons */
+    .control-btn {
+      background: none;
+      border: none;
+      padding: 2px 4px;
+      margin-left: 5px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    .edit-btn { color: #3b82f6; }
+    .edit-btn:hover { background-color: #dbeafe; }
+    .delete-btn { color: #ef4444; }
+    .delete-btn:hover { background-color: #fee2e2; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <div class="container mx-auto max-w-7xl bg-white p-6 rounded-lg shadow-md space-y-8">
+    <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800">
+      Elegant LOB Tool (v9.9 - Final Fixes)
+    </h1>
+
+    <!-- Project Start Date -->
+    <div class="mb-6 bg-gray-100 p-4 rounded-lg border border-gray-200 flex items-center space-x-4">
+      <label for="project-start-date-input" class="block text-sm font-medium text-gray-700">
+        Project Start Date:
+      </label>
+      <input type="date" id="project-start-date-input" class="form-input px-3 py-2" />
+    </div>
+
+    <!-- Main Form and Activity List -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Activity Form -->
+      <div class="md:col-span-1 bg-gray-50 p-5 rounded-lg border border-gray-200 self-start">
+        <h2 id="form-title" class="text-xl font-semibold mb-4 text-gray-700">Add Activity</h2>
+        <form id="activity-form" class="space-y-3">
+          <!-- WBS Code -->
+          <div class="floating-input">
+            <input type="text" id="wbs-code" placeholder=" " required
+                   pattern="^[0-9]+(\.[0-9]+)*$"
+                   title="Use numbers and dots only (e.g., 1.1.2)" />
+            <label for="wbs-code">WBS Code</label>
+          </div>
+          <!-- Activity Name -->
+          <div class="floating-input">
+            <input type="text" id="activity-name" placeholder=" " required />
+            <label for="activity-name">Activity Name</label>
+          </div>
+          <!-- Overall Duration -->
+          <div class="floating-input">
+            <input type="number" id="overall-duration" placeholder=" " required min="0.1" step="0.1" />
+            <label for="overall-duration">Overall Duration (days)</label>
+          </div>
+          <!-- Manual Start Date -->
+          <div class="floating-input">
+            <input type="date" id="activity-start-date" placeholder=" " />
+            <label for="activity-start-date">Manual Start Date (Optional)</label>
+          </div>
+          <!-- Number of Units -->
+          <div class="floating-input">
+            <input type="number" id="num-units" placeholder=" " required min="1" step="1" />
+            <label for="num-units">Number of Units</label>
+          </div>
+          <!-- Start Unit -->
+          <div class="floating-input">
+            <input type="number" id="start-unit" placeholder=" " required min="1" step="1" value="1" />
+            <label for="start-unit">Start Unit (Informational)</label>
+          </div>
+
+          <!-- Dependency Links -->
+          <div class="border-t border-gray-300 pt-4 mt-4">
+            <h3 class="text-lg font-semibold mb-3 text-gray-700">Dependency Links</h3>
+            <div id="dependency-links-container" class="space-y-3 mb-3 max-h-48 overflow-y-auto pr-2">
+              <!-- Dependency rows dynamically added -->
+            </div>
+            <button type="button" id="add-dependency-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium py-2 px-4 rounded-md shadow-sm">
+              + Add Dependency Link
+            </button>
+          </div>
+
+          <button id="submit-button" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow">
+            Add Activity
+          </button>
+          <button id="cancel-edit-button" type="button" onclick="cancelEdit()" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md shadow" style="display: none;">
+            Cancel Edit
+          </button>
+        </form>
+      </div>
+
+      <!-- Activity List and Project Summary -->
+      <div class="md:col-span-2 flex flex-col space-y-4">
+        <!-- Project Summary -->
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <h3 class="text-lg font-semibold mb-2 text-blue-800">Project Summary</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+            <div><strong>Start Date:</strong> <span id="project-start-date">-</span></div>
+            <div><strong>End Date:</strong> <span id="project-end-date">-</span></div>
+            <div><strong>Duration:</strong> <span id="project-duration">-</span> days</div>
+          </div>
+        </div>
+        <!-- Hierarchical WBS View -->
+        <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 flex-grow flex flex-col wbs-container">
+          <h2 class="text-xl font-semibold mb-3 text-gray-700">Activities (WBS View)</h2>
+          <p id="no-activities-message" class="text-gray-500 italic mb-2" style="display: block;">No activities added yet.</p>
+          <div id="activity-list-container" class="activity-list wbs-list flex-grow overflow-y-auto pr-2 border-t pt-2" style="display: none;">
+            <!-- Hierarchical tree rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line of Balance Chart -->
+    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700 text-center">Line of Balance Chart</h2>
+      <div class="relative h-96 md:h-[500px]">
+        <canvas id="lob-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Gantt Chart -->
+    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm mt-8">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700 text-center">Gantt Chart</h2>
+      <div id="gantt-chart-container" class="relative h-[600px]">
+        <canvas id="gantt-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    console.log("Initializing Elegant LOB Tool (v9.9 - Final Fixes)...");
+
+    // --------------------------------------------------------------
+    // Global Variables
+    // --------------------------------------------------------------
+    let activities = [];
+    let lobChartInstance = null;
+    let ganttChartInstance = null;
+    const colors = ['#4f46e5','#db2777','#16a34a','#ca8a04','#0ea5e9','#d97706','#6d28d9','#059669','#dc2626','#64748b'];
+    let colorIndex = 0;
+    let editingActivityId = null;
+    let projectStartDate = new Date();
+
+    // --------------------------------------------------------------
+    // DOM Elements
+    // --------------------------------------------------------------
+    let form, submitButton, cancelEditButton, noActivitiesMessage, activityListContainer,
+        projectStartDateEl, projectEndDateEl, projectDurationEl, lobCtx, ganttCtx;
+    let wbsCodeInput, nameInput, overallDurationInput, unitsInput, startUnitInput, activityStartDateInput;
+    let projectStartDateInput;
+    let dependencyLinksContainer, addDependencyBtn;
+
+    // --------------------------------------------------------------
+    // Utility Functions
+    // --------------------------------------------------------------
+    function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
+    function getNextColor() {
+      const color = colors[colorIndex % colors.length];
+      colorIndex++;
+      return color;
+    }
+    function getActivityById(id) { return activities.find(act => act.id === id); }
+    function naturalSortActivities(a, b) {
+      const aCode = a.wbsCode || "";
+      const bCode = b.wbsCode || "";
+      const ax = [], bx = [];
+      aCode.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { ax.push([$1 ? parseInt($1) : Infinity, $2 || ""]) });
+      bCode.replace(/(\d+)|(\D+)/g, (_, $1, $2) => { bx.push([$1 ? parseInt($1) : Infinity, $2 || ""]) });
+      while (ax.length && bx.length) {
+        const an = ax.shift();
+        const bn = bx.shift();
+        const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+        if (nn) return nn;
+      }
+      return ax.length - bx.length;
+    }
+    function addDays(date, days) {
+      if (!date || !(date instanceof Date) || isNaN(date) || typeof days !== 'number' || isNaN(days)) {
+        return null;
+      }
+      let result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      result.setUTCDate(result.getUTCDate() + days);
+      return result;
+    }
+    function formatDate(date) {
+      if (!date || !(date instanceof Date) || isNaN(date)) return 'N/A';
+      try {
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        return new Date(Date.UTC(year, month, day)).toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC'
+        });
+      } catch (e) {
+        console.error("Error formatting date:", e);
+        return 'Invalid Date';
+      }
+    }
+    function diffDays(date1, date2) {
+      if (!date1 || !date2 || !(date1 instanceof Date) || !(date2 instanceof Date) || isNaN(date1) || isNaN(date2)) {
+        return NaN;
+      }
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const utc1 = Date.UTC(date1.getUTCFullYear(), date1.getUTCMonth(), date1.getUTCDate());
+      const utc2 = Date.UTC(date2.getUTCFullYear(), date2.getUTCMonth(), date2.getUTCDate());
+      return Math.round((utc2 - utc1) / msPerDay);
+    }
+
+    // --------------------------------------------------------------
+    // recalculateSchedule() – PMBOK-based dependency scheduling
+    // --------------------------------------------------------------
+    function recalculateSchedule() {
+      console.log("Recalculating schedule...");
+      let summary = {
+        projectStart: projectStartDate ? new Date(projectStartDate) : null,
+        projectEnd: projectStartDate ? new Date(projectStartDate) : null,
+        projectDuration: 0
+      };
+      try {
+        if (!projectStartDate || isNaN(projectStartDate)) {
+          throw new Error("Invalid Project Start Date.");
+        }
+        if (activities.length === 0) return summary;
+
+        // Reset calculations
+        activities.forEach(act => {
+          act.relativeStartTime = null;
+          act.relativeEndTime = null;
+          act.actualStartDate = null;
+          act.actualEndDate = null;
+          act.calculated = false;
+        });
+
+        let changed = true;
+        let iterations = 0;
+        const maxIterations = activities.length * activities.length + 10;
+        while (changed && iterations < maxIterations) {
+          changed = false;
+          iterations++;
+          activities.forEach(activity => {
+            if (activity.calculated || activity.relativeStartTime === 'error') return;
+            let requiredStartDay = 0;
+            let allPredsCalculated = true;
+            const overallDuration = parseFloat(activity.overallDuration) || 0;
+            if (overallDuration <= 0 || (parseInt(activity.numUnits) || 0) <= 0) {
+              activity.relativeStartTime = 'error';
+              activity.relativeEndTime = 'error';
+              activity.calculated = true;
+              changed = true;
+              return;
+            }
+            // Dependencies
+            if (activity.dependencies && activity.dependencies.length > 0) {
+              for (const dep of activity.dependencies) {
+                const predActivity = getActivityById(dep.predId);
+                if (!predActivity) {
+                  console.warn("Predecessor not found for", activity.name);
+                  allPredsCalculated = false;
+                  activity.relativeStartTime = 'error';
+                  activity.relativeEndTime = 'error';
+                  changed = true;
+                  break;
+                }
+                if (predActivity.relativeStartTime === null || predActivity.relativeEndTime === null || predActivity.relativeStartTime === 'error') {
+                  allPredsCalculated = false;
+                  break;
+                }
+                let constraintStartDay = 0;
+                switch (dep.type) {
+                  case 'FS': constraintStartDay = predActivity.relativeEndTime + (parseFloat(dep.lag) || 0); break;
+                  case 'SS': constraintStartDay = predActivity.relativeStartTime + (parseFloat(dep.lag) || 0); break;
+                  case 'FF': constraintStartDay = predActivity.relativeEndTime + (parseFloat(dep.lag) || 0) - overallDuration; break;
+                  case 'SF': constraintStartDay = predActivity.relativeStartTime + (parseFloat(dep.lag) || 0) - overallDuration; break;
+                  default: constraintStartDay = predActivity.relativeEndTime + (parseFloat(dep.lag) || 0);
+                }
+                requiredStartDay = Math.max(requiredStartDay, constraintStartDay);
+              }
+            }
+            if (!allPredsCalculated) {
+              activity.calculated = false;
+              return;
+            }
+            let computedStartTime = requiredStartDay;
+            if (activity.manualStartDate && !isNaN(activity.manualStartDate)) {
+              const manualStartDay = diffDays(projectStartDate, activity.manualStartDate);
+              computedStartTime = Math.max(computedStartTime, manualStartDay);
+            }
+            const newRelativeStartTime = computedStartTime;
+            const newRelativeEndTime = newRelativeStartTime + overallDuration;
+            if (activity.relativeStartTime !== newRelativeStartTime || activity.relativeEndTime !== newRelativeEndTime) {
+              activity.relativeStartTime = newRelativeStartTime;
+              activity.relativeEndTime = newRelativeEndTime;
+              activity.calculated = true;
+              changed = true;
+            }
+            activity.calculated = true;
+          });
+          activities.forEach(act => { if (act.relativeStartTime === null) act.calculated = false; });
+        }
+
+        if (iterations >= maxIterations) {
+          console.error("Max iterations reached.");
+          alert("Calculation Error: Cyclic dependencies suspected.");
+          activities.forEach(act => {
+            if (act.relativeStartTime === null) {
+              act.relativeStartTime = 'error';
+              act.relativeEndTime = 'error';
+            }
+          });
+        }
+
+        let overallProjectActualStart = null;
+        let overallProjectActualEnd = null;
+        activities.forEach(act => {
+          if (typeof act.relativeStartTime === 'number') {
+            act.actualStartDate = addDays(projectStartDate, act.relativeStartTime);
+            if (!overallProjectActualStart || act.actualStartDate < overallProjectActualStart) {
+              overallProjectActualStart = act.actualStartDate;
+            }
+          }
+          if (typeof act.relativeEndTime === 'number') {
+            act.actualEndDate = addDays(projectStartDate, act.relativeEndTime);
+            if (!overallProjectActualEnd || act.actualEndDate > overallProjectActualEnd) {
+              overallProjectActualEnd = act.actualEndDate;
+            }
+          }
+        });
+        if (!overallProjectActualStart) overallProjectActualStart = new Date(projectStartDate);
+        if (!overallProjectActualEnd) overallProjectActualEnd = new Date(projectStartDate);
+        const durationInDays = diffDays(overallProjectActualStart, overallProjectActualEnd);
+        summary = {
+          projectStart: overallProjectActualStart,
+          projectEnd: overallProjectActualEnd,
+          projectDuration: isNaN(durationInDays) ? 'Error' : durationInDays
+        };
+      } catch (error) {
+        console.error("Error in recalculateSchedule:", error);
+        alert("Error during schedule calculation. Check console.");
+        summary = { projectStart: null, projectEnd: null, projectDuration: 'Error' };
+        activities.forEach(act => {
+          act.relativeStartTime = 'error';
+          act.relativeEndTime = 'error';
+          act.actualStartDate = null;
+          act.actualEndDate = null;
+        });
+      }
+      console.log("Schedule calculation finished:", summary);
+      return summary;
+    }
+
+    // --------------------------------------------------------------
+    // Chart Functions
+    // --------------------------------------------------------------
+    function updateLobChart(projectStart, projectEnd) {
+      const lobDatasets = activities.map(act => {
+        if (!act.actualStartDate || !act.actualEndDate || isNaN(act.numUnits) || act.numUnits <= 0) return null;
+        const startPoint = { x: act.actualStartDate, y: act.startUnit };
+        const endPoint = { x: act.actualEndDate, y: act.startUnit + act.numUnits };
+        return {
+          label: act.name,
+          data: [startPoint, endPoint],
+          borderColor: act.color,
+          backgroundColor: act.color,
+          fill: false,
+          tension: 0,
+          borderWidth: 2,
+          pointRadius: 3
+        };
+      }).filter(ds => ds !== null);
+
+      const lobData = { datasets: lobDatasets };
+      const lobConfig = {
+        type: 'line',
+        data: lobData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'time',
+              bounds: 'ticks',
+              time: { unit: 'day', round: 'day' },
+              title: { display: true, text: 'Date' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 },
+              title: { display: true, text: 'Units' }
+            }
+          },
+          plugins: {
+            legend: { display: true, position: 'top' }
+          }
+        }
+      };
+
+      if (lobChartInstance) lobChartInstance.destroy();
+      lobChartInstance = new Chart(document.getElementById("lob-chart"), lobConfig);
+    }
+
+    function updateGanttChart(projectStart, projectEnd) {
+      const labels = activities.map(act => act.wbsCode + " - " + act.name);
+      const offsets = activities.map(act => (act.actualStartDate ? diffDays(projectStart, act.actualStartDate) : 0));
+      const durations = activities.map(act => parseFloat(act.overallDuration) || 0);
+
+      const ganttData = {
+        labels,
+        datasets: [
+          {
+            label: "Offset",
+            data: offsets,
+            backgroundColor: "rgba(0,0,0,0)",
+            stack: "Stack 0"
+          },
+          {
+            label: "Duration",
+            data: durations,
+            backgroundColor: activities.map(act => act.color),
+            borderRadius: 4,
+            stack: "Stack 0"
+          }
+        ]
+      };
+
+      const ganttConfig = {
+        type: "bar",
+        data: ganttData,
+        options: {
+          responsive: true,
+          indexAxis: "y",
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, title: { display: true, text: "Days from Project Start" } },
+            y: { stacked: true }
+          },
+          layout: { padding: 10 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  if (context.datasetIndex === 0) {
+                    return null; // skip the offset dataset
+                  }
+                  const idx = context.dataIndex;
+                  const act = activities[idx];
+                  const dur = parseFloat(act.overallDuration) || 0;
+                  return `${act.wbsCode} - ${act.name}: ${dur} days`;
+                }
+              }
+            }
+          },
+          barPercentage: 0.8,
+          categoryPercentage: 0.8
+        }
+      };
+
+      if (ganttChartInstance) ganttChartInstance.destroy();
+      ganttChartInstance = new Chart(document.getElementById("gantt-chart"), ganttConfig);
+    }
+
+    function displayProjectInfo(summary) {
+      if (projectStartDateEl && projectEndDateEl && projectDurationEl) {
+        projectStartDateEl.textContent = summary.projectStart ? formatDate(summary.projectStart) : "-";
+        projectEndDateEl.textContent = summary.projectEnd ? formatDate(summary.projectEnd) : "-";
+        projectDurationEl.textContent = summary.projectDuration;
+      }
+    }
+
+    // --------------------------------------------------------------
+    // Hierarchical WBS Tree
+    // --------------------------------------------------------------
+    function buildWbsTree(activities) {
+      let root = { children: {} };
+      activities.forEach(activity => {
+        let parts = activity.wbsCode.split(".");
+        let node = root;
+        parts.forEach(part => {
+          if (!node.children[part]) {
+            node.children[part] = { children: {} };
+          }
+          node = node.children[part];
+        });
+        node.activity = activity;
+      });
+      return root;
+    }
+
+    function renderWbsTree(node) {
+      let ul = document.createElement("ul");
+      ul.classList.add("ml-4");
+      for (const key in node.children) {
+        let child = node.children[key];
+        let li = document.createElement("li");
+        if (child.activity) {
+          let act = child.activity;
+          let card = document.createElement("div");
+          card.classList.add("bg-white","shadow-sm","p-2","rounded-md","flex","justify-between","items-center","mb-2");
+
+          // Left side
+          let leftSection = document.createElement("div");
+          leftSection.classList.add("flex","items-start","space-x-2");
+
+          let colorIndicator = document.createElement("div");
+          colorIndicator.classList.add("w-3","h-3","rounded-full","mt-1");
+          colorIndicator.style.backgroundColor = act.color;
+          leftSection.appendChild(colorIndicator);
+
+          let info = document.createElement("div");
+          info.classList.add("text-xs","text-gray-700");
+
+          // Calculate productivity rate
+          const rate = (act.overallDuration > 0) ? (act.numUnits / act.overallDuration).toFixed(2) : "N/A";
+          info.innerHTML = `
+            <strong>${act.wbsCode}</strong> – ${act.name}<br>
+            <span class="text-gray-500">
+              ${act.actualStartDate ? formatDate(act.actualStartDate) : "N/A"} to
+              ${act.actualEndDate ? formatDate(act.actualEndDate) : "N/A"}
+            </span><br>
+            <span class="text-gray-500">Dur: ${act.overallDuration}, Productivity: ${rate} units/day</span>
+          `;
+          leftSection.appendChild(info);
+          card.appendChild(leftSection);
+
+          // Right side (Edit/Delete)
+          let rightSection = document.createElement("div");
+          rightSection.classList.add("flex","space-x-1");
+
+          let editBtn = document.createElement("button");
+          editBtn.classList.add("edit-btn","text-xs","px-1","py-0.5","rounded","border","border-gray-300");
+          editBtn.textContent = "Edit";
+          editBtn.addEventListener("click", () => startEditActivity(act.id));
+
+          let delBtn = document.createElement("button");
+          delBtn.classList.add("delete-btn","text-xs","px-1","py-0.5","rounded","border","border-gray-300");
+          delBtn.textContent = "Del";
+          delBtn.addEventListener("click", () => deleteActivity(act.id));
+
+          rightSection.appendChild(editBtn);
+          rightSection.appendChild(delBtn);
+          card.appendChild(rightSection);
+
+          li.appendChild(card);
+        }
+        if (Object.keys(child.children).length > 0) {
+          li.appendChild(renderWbsTree(child));
+        }
+        ul.appendChild(li);
+      }
+      return ul;
+    }
+
+    function renderActivityList() {
+      if (activities.length === 0) {
+        noActivitiesMessage.style.display = "block";
+        activityListContainer.style.display = "none";
+        return;
+      }
+      noActivitiesMessage.style.display = "none";
+      activityListContainer.style.display = "block";
+      activityListContainer.innerHTML = "";
+      activities.sort(naturalSortActivities);
+      const tree = buildWbsTree(activities);
+      const treeList = renderWbsTree(tree);
+      activityListContainer.appendChild(treeList);
+    }
+
+    // --------------------------------------------------------------
+    // Editing & Deleting
+    // --------------------------------------------------------------
+    function startEditActivity(id) {
+      console.log("Editing activity:", id);
+      const act = getActivityById(id);
+      if (!act) return;
+      editingActivityId = id;
+
+      wbsCodeInput.value = act.wbsCode;
+      nameInput.value = act.name;
+      overallDurationInput.value = act.overallDuration;
+      unitsInput.value = act.numUnits;
+      startUnitInput.value = act.startUnit;
+      if (act.manualStartDate) {
+        const offset = act.manualStartDate.getTimezoneOffset();
+        const localDate = new Date(act.manualStartDate.getTime() - offset * 60 * 1000);
+        activityStartDateInput.value = localDate.toISOString().split("T")[0];
+      } else {
+        activityStartDateInput.value = "";
+      }
+
+      dependencyLinksContainer.innerHTML = "";
+      if (act.dependencies && act.dependencies.length > 0) {
+        act.dependencies.forEach(dep => { addDependencyRow(dep.predId, dep.type, dep.lag); });
+      }
+
+      document.getElementById("form-title").textContent = "Edit Activity";
+      submitButton.textContent = "Update Activity";
+      cancelEditButton.style.display = "block";
+    }
+
+    function deleteActivity(id) {
+      console.log("Deleting activity:", id);
+      activities = activities.filter(a => a.id !== id);
+      updateUI();
+    }
+
+    function cancelEdit() {
+      form.reset();
+      dependencyLinksContainer.innerHTML = "";
+      editingActivityId = null;
+      document.getElementById("form-title").textContent = "Add Activity";
+      submitButton.textContent = "Add Activity";
+      cancelEditButton.style.display = "none";
+    }
+
+    // --------------------------------------------------------------
+    // Form Submission
+    // --------------------------------------------------------------
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const wbsCodeVal = wbsCodeInput.value.trim();
+      const nameVal = nameInput.value.trim();
+      const durationVal = parseFloat(overallDurationInput.value) || 0;
+      const manualDateVal = activityStartDateInput.value ? new Date(activityStartDateInput.value + "T00:00:00Z") : null;
+      const unitsVal = parseInt(unitsInput.value) || 1;
+      const sUnitVal = parseInt(startUnitInput.value) || 1;
+
+      if (!wbsCodeVal) {
+        alert("WBS code cannot be empty.");
+        return;
+      }
+      if (editingActivityId) {
+        if (activities.some(act => act.wbsCode === wbsCodeVal && act.id !== editingActivityId)) {
+          alert("WBS code must be unique. Already used.");
+          return;
+        }
+      } else {
+        if (activities.some(act => act.wbsCode === wbsCodeVal)) {
+          alert("WBS code must be unique. Already used.");
+          return;
+        }
+      }
+
+      const newDependencies = [];
+      const rows = dependencyLinksContainer.querySelectorAll(".dependency-row");
+      rows.forEach(row => {
+        const predSelect = row.querySelector(".pred-activity-select");
+        const typeSelect = row.querySelector(".dependency-type-select");
+        const lagInput = row.querySelector(".dependency-lag-input");
+        if (predSelect && predSelect.value && typeSelect && lagInput) {
+          newDependencies.push({
+            predId: predSelect.value,
+            type: typeSelect.value,
+            lag: parseFloat(lagInput.value) || 0
+          });
+        }
+      });
+
+      if (editingActivityId) {
+        const existing = getActivityById(editingActivityId);
+        if (existing) {
+          existing.wbsCode = wbsCodeVal;
+          existing.name = nameVal;
+          existing.overallDuration = durationVal;
+          existing.manualStartDate = manualDateVal;
+          existing.numUnits = unitsVal;
+          existing.startUnit = sUnitVal;
+          existing.dependencies = newDependencies;
+        }
+        editingActivityId = null;
+        document.getElementById("form-title").textContent = "Add Activity";
+        submitButton.textContent = "Add Activity";
+      } else {
+        const newActivity = {
+          id: generateId(),
+          wbsCode: wbsCodeVal,
+          name: nameVal,
+          overallDuration: durationVal,
+          manualStartDate: manualDateVal,
+          numUnits: unitsVal,
+          startUnit: sUnitVal,
+          dependencies: newDependencies,
+          color: getNextColor()
+        };
+        activities.push(newActivity);
+      }
+
+      form.reset();
+      dependencyLinksContainer.innerHTML = "";
+      cancelEditButton.style.display = "none";
+      updateUI();
+    }
+
+    // --------------------------------------------------------------
+    // Add Dependency Row (Lag with Floating Label)
+    // --------------------------------------------------------------
+    function addDependencyRow(selectedPredId = "", selectedType = "FS", lagValue = 0) {
+      const row = document.createElement("div");
+      row.className = "dependency-row flex flex-col md:flex-row md:items-center gap-2";
+      // Key fix: ensure we have enough width and 'overflow: visible' for the label
+      row.innerHTML = `
+        <select class="pred-activity-select flex-1">
+          <option value="">Select Activity</option>
+          ${activities.map(act => `<option value="${act.id}" ${act.id === selectedPredId ? "selected" : ""}>${act.name}</option>`).join("")}
+        </select>
+        <select class="dependency-type-select">
+          <option value="FS" ${selectedType==="FS"?"selected":""}>FS</option>
+          <option value="SS" ${selectedType==="SS"?"selected":""}>SS</option>
+          <option value="FF" ${selectedType==="FF"?"selected":""}>FF</option>
+          <option value="SF" ${selectedType==="SF"?"selected":""}>SF</option>
+        </select>
+        <div class="floating-input w-24 relative" style="overflow: visible; z-index: 10;">
+          <input type="number" class="dependency-lag-input" placeholder=" " step="0.1" value="${lagValue}" />
+          <label>Lag (days)</label>
+        </div>
+        <button type="button" class="remove-dependency-btn" onclick="this.parentNode.remove()">X</button>
+      `;
+      dependencyLinksContainer.appendChild(row);
+    }
+
+    // --------------------------------------------------------------
+    // updateUI
+    // --------------------------------------------------------------
+    function updateUI() {
+      console.log("--- Starting updateUI ---");
+      try {
+        if (!projectStartDate || isNaN(projectStartDate)) {
+          console.error("Invalid Project Start Date.");
+          return;
+        }
+        const projectSummary = recalculateSchedule();
+        displayProjectInfo(projectSummary);
+        if (projectSummary && projectSummary.projectStart !== null) {
+          renderActivityList();
+          updateLobChart(projectSummary.projectStart, projectSummary.projectEnd);
+          updateGanttChart(projectSummary.projectStart, projectSummary.projectEnd);
+        } else {
+          console.error("Schedule calculation incomplete or error state.");
+        }
+        console.log("--- UI update complete ---");
+      } catch (error) {
+        console.error("Error during updateUI:", error);
+        alert(`An error occurred updating the display: ${error.message}. Check console.`);
+      }
+    }
+
+    // --------------------------------------------------------------
+    // Initialization
+    // --------------------------------------------------------------
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("DOM fully loaded.");
+      form = document.getElementById("activity-form");
+      submitButton = document.getElementById("submit-button");
+      cancelEditButton = document.getElementById("cancel-edit-button");
+      noActivitiesMessage = document.getElementById("no-activities-message");
+      activityListContainer = document.getElementById("activity-list-container");
+      projectStartDateEl = document.getElementById("project-start-date");
+      projectEndDateEl = document.getElementById("project-end-date");
+      projectDurationEl = document.getElementById("project-duration");
+      const lobCanvas = document.getElementById("lob-chart");
+      const ganttCanvas = document.getElementById("gantt-chart");
+      wbsCodeInput = document.getElementById("wbs-code");
+      nameInput = document.getElementById("activity-name");
+      overallDurationInput = document.getElementById("overall-duration");
+      unitsInput = document.getElementById("num-units");
+      startUnitInput = document.getElementById("start-unit");
+      activityStartDateInput = document.getElementById("activity-start-date");
+      projectStartDateInput = document.getElementById("project-start-date-input");
+      dependencyLinksContainer = document.getElementById("dependency-links-container");
+      addDependencyBtn = document.getElementById("add-dependency-btn");
+
+      if (!form || !lobCanvas || !ganttCanvas || !wbsCodeInput || !nameInput || !overallDurationInput ||
+          !projectStartDateInput || !dependencyLinksContainer || !addDependencyBtn || !activityStartDateInput) {
+        console.error("Initialization Error: Critical elements missing!");
+        alert("Page initialization failed.");
+        return;
+      }
+      try {
+        lobCtx = lobCanvas.getContext("2d");
+        ganttCtx = ganttCanvas.getContext("2d");
+        if (!lobCtx || !ganttCtx) { throw new Error("Canvas context failed"); }
+      } catch (e) {
+        console.error("Failed to get 2D context for charts:", e);
+        alert("Could not initialize chart canvas.");
+        return;
+      }
+
+      // Init project start date with today's date
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const todayLocal = new Date(today.getTime() - (offset * 60 * 1000));
+      projectStartDateInput.value = todayLocal.toISOString().split("T")[0];
+      projectStartDate = new Date(projectStartDateInput.value + "T00:00:00Z");
+      console.log("Initial Project Start Date:", projectStartDate);
+
+      projectStartDateInput.addEventListener("change", (event) => {
+        if (event.target.value) {
+          const newStartDate = new Date(event.target.value + "T00:00:00Z");
+          if (!isNaN(newStartDate)) {
+            projectStartDate = newStartDate;
+            updateUI();
+          } else {
+            console.error("Invalid date entered.");
+          }
+        }
+      });
+      wbsCodeInput.addEventListener("input", (event) => {
+        let value = event.target.value;
+        value = value.replace(/[^0-9.]/g, "");
+        value = value.replace(/^\.+/, "");
+        value = value.replace(/\.{2,}/g, ".");
+        event.target.value = value;
+      });
+      addDependencyBtn.addEventListener("click", () => { addDependencyRow(); });
+      form.addEventListener("submit", handleFormSubmit);
+
+      updateUI();
+    });
+  </script>
+</body>
+</html>
