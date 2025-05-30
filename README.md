@@ -77,14 +77,14 @@ This tool is built with HTML, CSS (Tailwind CSS for basic layout, with custom th
     *   The **Activities (WBS View)** lists all activities hierarchically. Cards have a left border matching their chart color.
     *   The **Line of Balance Chart** and **Gantt Chart** will render based on the calculated schedule.
 5.  **Manage Project Data:**
-    *   **Save (Local Storage):** Click `<i class="fas fa-save"></i> Save` to save the current project state to your browser's local storage. You'll be prompted for a project name.
-    *   **Load (Local Storage):** Click `<i class="fas fa-folder-open"></i> Load` to open a modal where you can select a previously saved project from local storage.
-    *   **Reset:** Click `<i class="fas fa-undo"></i> Reset` to clear the current project and start a new one.
-    *   **Export JSON:** Click `<i class="fas fa-file-export"></i> Export JSON` to download a JSON file of your entire project. This is recommended for backups or transferring to another computer/browser.
-    *   **Import JSON:** Click `<i class="fas fa-file-import"></i> Import JSON` to load a project from a previously exported JSON file.
+    *   **Save (Local Storage):** Click Save to save the current project state to your browser's local storage. You'll be prompted for a project name.
+    *   **Load (Local Storage):** Click Load to open a modal where you can select a previously saved project from local storage.
+    *   **Reset:** Click Reset to clear the current project and start a new one.
+    *   **Export JSON:** Click Export JSON to download a JSON file of your entire project. This is recommended for backups or transferring to another computer/browser.
+    *   **Import JSON:** Click Import JSON to load a project from a previously exported JSON file.
 6.  **Export Reports:**
-    *   **Export CSV:** Click `<i class="fas fa-file-csv"></i> Export CSV` to download a CSV file of the activity list.
-    *   **Export PDF:** Click `<i class="fas fa-file-pdf"></i> Export PDF` to generate and download a PDF report.
+    *   **Export CSV:** Click Export CSV to download a CSV file of the activity list.
+    *   **Export PDF:** Click Export PDF to generate and download a PDF report.
 
 ## File Structure
 
